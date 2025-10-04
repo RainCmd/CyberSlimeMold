@@ -6,7 +6,8 @@ public class Map : System.IDisposable
     {
         Alive,
         Death,
-        Source
+        Source,
+        Obstacle
     }
     [System.Serializable]
     public struct Node

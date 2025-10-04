@@ -11,7 +11,7 @@ public class GameMgr : MonoBehaviour
     private void Start()
     {
         Instance = this;
-        Restart(64);
+        Restart(48);
     }
     private void FixedUpdate()
     {
@@ -19,8 +19,8 @@ public class GameMgr : MonoBehaviour
         foreach (var player in battle.players)
             if (player.hp > 0)
             {
-                var count = Mathf.Max(Mathf.Log10(player.hp) + Mathf.Log10(player.territory), 1);
-                if (count-- > 0)
+                player.spawn += Mathf.Max(Mathf.Log10(player.hp) + Mathf.Log10(player.territory), 1);
+                if (player.spawn-- > 0)
                     battle.AddEnegry(player.id);
             }
         paracargoCD -= Time.deltaTime;
@@ -32,7 +32,7 @@ public class GameMgr : MonoBehaviour
                 var x = Random.Range(0, battle.map.width);
                 var y = Random.Range(0, battle.map.height);
                 var node = battle.map.nodes[x, y];
-                if (node.state != Map.State.Source)
+                if (node.state != Map.State.Source && node.state != Map.State.Obstacle)
                 {
                     node.node.AddEnegry(Random.Range(300, 500));
                     break;

@@ -12,7 +12,7 @@ public class Feed : MonoBehaviour, IPointerClickHandler
             var hit = Physics2D.Raycast(ray.origin, ray.direction);
             if (!hit.collider) return;
             var node = hit.collider.GetComponent<Node>();
-            if (!node || node.node.state == Map.State.Source) return;
+            if (!node || node.node.state == Map.State.Source || node.node.state == Map.State.Obstacle) return;
             node.AddEnegry(100);
         }
     }

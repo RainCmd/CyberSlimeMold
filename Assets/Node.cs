@@ -18,7 +18,9 @@ public class Node : MonoBehaviour
     {
         if (node.player != this.node.player || node.state != this.node.state || (node.enegry == 0 && this.node.enegry > 0))
         {
-            if (node.player < 0) spriteRenderer.color = Color.black;
+            if (node.state == Map.State.Obstacle)
+                spriteRenderer.color = Color.clear;
+            else if (node.player < 0) spriteRenderer.color = Color.black;
             else
             {
                 var player = GameMgr.Instance.battle.players[node.player];
@@ -41,7 +43,7 @@ public class Node : MonoBehaviour
         }
         if (node.state != this.node.state || node.px != this.node.px || node.py != this.node.py)
         {
-            if (node.state == Map.State.Source || node.px < 0 || node.py < 0) path.gameObject.SetActive(false);
+            if (node.state == Map.State.Source || node.state == Map.State.Obstacle || node.px < 0 || node.py < 0) path.gameObject.SetActive(false);
             else
             {
                 path.gameObject.SetActive(true);

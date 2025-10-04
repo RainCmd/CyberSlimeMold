@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+
 public class Player
 {
     public int id;
@@ -9,6 +10,7 @@ public class Player
     public int hp;
     public int territory;
     public int soldier;
+    public float spawn;
     public Color color;
     public Color territoryColor;
     public Color energyColor;
@@ -81,6 +83,7 @@ public class Battle : System.IDisposable
     public readonly List<Enegry> enegries = new();
     private readonly global::Enegry prefab;
     private readonly Stack<global::Enegry> pool = new();
+    private bool obstacle = true;
     public Battle(int width, int height, global::Enegry enegryPrefab, Node nodePrefab)
     {
         prefab = enegryPrefab;
@@ -104,6 +107,20 @@ public class Battle : System.IDisposable
                     node.player = player.id;
                     node.state = node.next = Map.State.Source;
                 }
+        SetObstacleArea(Map.State.Obstacle);
+    }
+    private void SetObstacleArea(Map.State state)
+    {
+        var offsetX = map.width / 4;
+        var offsetY = map.height / 4;
+        var obstacleAreaWidth = map.width / 2;
+        var obstacleAreaHeight = map.height / 2;
+        for (var x = 0; x < obstacleAreaWidth; x++)
+            for (var y = 0; y < obstacleAreaHeight; y++)
+            {
+                ref var node = ref map.nodes[x + offsetX, y + offsetY];
+                node.state = node.next = state;
+            }
     }
     private void GetStartPosition(ref Enegry enegry, int playerId)
     {
@@ -150,7 +167,7 @@ public class Battle : System.IDisposable
             damage -= targetPlayer.hp;
             var count = targetPlayer.width * targetPlayer.height;
             var value = damage / count;
-            count = (int)(damage % count);
+            count = damage % count;
             for (var x = 0; x < targetPlayer.width; x++)
                 for (var y = 0; y < targetPlayer.height; y++)
                 {
@@ -161,6 +178,11 @@ public class Battle : System.IDisposable
                     node.value = value;
                     if (count-- > 0) node.value++;
                 }
+            if (obstacle)
+            {
+                obstacle = false;
+                SetObstacleArea(Map.State.Death);
+            }
         }
     }
     private struct NodeCandidate
@@ -179,6 +201,7 @@ public class Battle : System.IDisposable
     {
         if (x < 0 || y < 0 || x >= map.width || y >= map.height) return 0;
         var node = map.nodes[x, y];
+        if (node.state == Map.State.Obstacle) return 0;
         if (node.state == Map.State.Source && node.player == enegry.player) return 0;
         NodeCandidate candidate;
         if (node.px == enegry.tx && node.py == enegry.ty)
@@ -234,7 +257,7 @@ public class Battle : System.IDisposable
                     }
                     else
                     {
-                        map.PathAddPheromone(enegry.sx, enegry.sy, 20);
+                        map.PathAddPheromone(enegry.sx, enegry.sy, node.enegry + 20);
                         if (node.value < enegry.value)
                         {
                             node.value = enegry.value - node.value;
@@ -258,6 +281,7 @@ public class Battle : System.IDisposable
                 }
                 else if (node.state != Map.State.Source)
                 {
+                    if (node.enegry > 0) map.PathAddPheromone(node.x, node.y, node.enegry);
                     if (node.value < MAX_NODE_VALUE)
                     {
                         node.value += enegry.value;

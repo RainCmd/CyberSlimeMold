@@ -8,12 +8,10 @@ public class BarDiagram : MonoBehaviour
     private Image[] images;
     public string field;
     private FieldInfo fieldInfo;
-    private RectTransform rt;
     private int[] values;
     private void Start()
     {
         fieldInfo = typeof(Player).GetField(field);
-        rt = transform as RectTransform;
         var players = GameMgr.Instance.battle.players;
         images = new Image[players.Length];
         values = new int[players.Length];
@@ -35,16 +33,14 @@ public class BarDiagram : MonoBehaviour
     public void Update()
     {
         UpdateValues();
-        var width = rt.rect.width;
         var total = 0;
         foreach (var v in values)
             total += v;
+        var fillAmount = 0f;
         for (int i = 0; i < values.Length; i++)
         {
-            var rt = images[i].rectTransform;
-            var sd = rt.sizeDelta;
-            sd.x = width * values[i] / total;
-            rt.sizeDelta = sd;
+            fillAmount += (float)values[i] / total;
+            images[i].fillAmount = fillAmount;
         }
     }
 }
