@@ -97,7 +97,7 @@ public class Battle : System.IDisposable
     public readonly List<Enegry> enegries = new();
     private readonly global::Enegry prefab;
     private readonly Stack<global::Enegry> pool = new();
-    private bool obstacle = true;
+    private int obstacle = 4;//当死了多少个玩家后消除中心障碍物
     public Battle(int width, int height, global::Enegry enegryPrefab, Node nodePrefab)
     {
         prefab = enegryPrefab;
@@ -202,11 +202,8 @@ public class Battle : System.IDisposable
                     node.value = value;
                     if (count-- > 0) node.value++;
                 }
-            if (obstacle)
-            {
-                obstacle = false;
+            if (--obstacle == 0)
                 SetObstacleArea(Map.State.Death);
-            }
         }
     }
     private struct NodeCandidate
