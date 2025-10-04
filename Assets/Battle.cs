@@ -3,6 +3,19 @@ using UnityEngine;
 
 public class Player
 {
+    public readonly struct Candidate
+    {
+        public readonly int sx, sy;
+        public readonly int tx, ty;
+
+        public Candidate(int sx, int sy, int tx, int ty)
+        {
+            this.sx = sx;
+            this.sy = sy;
+            this.tx = tx;
+            this.ty = ty;
+        }
+    }
     public int id;
     public string name;
     public int x, y;
@@ -14,6 +27,7 @@ public class Player
     public Color color;
     public Color territoryColor;
     public Color energyColor;
+    public readonly List<Candidate> candidates = new();
     public Player(int id, string name, int x, int y, int width, int height, Color color)
     {
         this.id = id;
@@ -100,6 +114,7 @@ public class Battle : System.IDisposable
             new(7, "橙", width / 2, height * 7 / 8, width / 16, height / 16, new Color(1, .5f, 0)),
         };
         foreach (var player in players)
+        {
             for (var x = 0; x < player.width; x++)
                 for (var y = 0; y < player.height; y++)
                 {
@@ -107,6 +122,17 @@ public class Battle : System.IDisposable
                     node.player = player.id;
                     node.state = node.next = Map.State.Source;
                 }
+            for (var x = 0; x < player.width; x++)
+            {
+                player.candidates.Add(new(player.x + x, player.y, player.x + x, player.y - 1));
+                player.candidates.Add(new(player.x + x, player.y + player.height - 1, player.x + x, player.y + player.height));
+            }
+            for (var y = 0; y < player.height; y++)
+            {
+                player.candidates.Add(new(player.x, player.y + y, player.x - 1, player.y + y));
+                player.candidates.Add(new(player.x + player.width - 1, player.y + y, player.x + player.width, player.y + y));
+            }
+        }
         SetObstacleArea(Map.State.Obstacle);
     }
     private void SetObstacleArea(Map.State state)
@@ -125,26 +151,24 @@ public class Battle : System.IDisposable
     private void GetStartPosition(ref Enegry enegry, int playerId)
     {
         var player = players[playerId];
-        int x, y, tx, ty;
-        var dir = Random.value > .5f;
-        if (Random.Range(0, player.width + player.height) < player.width)
+        var total = 0f;
+        foreach (var candidate in player.candidates)
+            total += Mathf.Log10(10 + map.nodes[candidate.tx, candidate.ty].pheromone);
+        var result = player.candidates[0];
+        var value = Random.Range(0, total);
+        foreach (var candidate in player.candidates)
         {
-            x = player.x + Random.Range(0, player.width);
-            y = player.y + (dir ? 0 : player.height - 1);
-            tx = x;
-            ty = dir ? y - 1 : y + 1;
+            value -= Mathf.Log10(10 + map.nodes[candidate.tx, candidate.ty].pheromone);
+            if (value <= 0)
+            {
+                result = candidate;
+                break;
+            }
         }
-        else
-        {
-            x = player.x + (dir ? 0 : player.width - 1);
-            y = player.y + Random.Range(0, player.height);
-            tx = dir ? x - 1 : x + 1;
-            ty = y;
-        }
-        enegry.sx = x;
-        enegry.sy = y;
-        enegry.tx = tx;
-        enegry.ty = ty;
+        enegry.sx = result.sx;
+        enegry.sy = result.sy;
+        enegry.tx = result.tx;
+        enegry.ty = result.ty;
     }
     public void AddEnegry(int player, int value = 50)
     {
