@@ -34,6 +34,7 @@ public class Battle : System.IDisposable
 {
     public struct Enegry
     {
+        public const float SPEED = .15f;
         public global::Enegry enegry;
         public int player;
         public int value;
@@ -51,12 +52,6 @@ public class Battle : System.IDisposable
             forward = true;
         }
 
-        public void Back(Battle battle)
-        {
-            (sx, tx) = (tx, sx);
-            (sy, ty) = (ty, sy);
-            SetForward(battle, !forward);
-        }
         public void UpdatePV()
         {
             position = new Vector2(sx, sy);
@@ -134,7 +129,7 @@ public class Battle : System.IDisposable
         enegry.tx = tx;
         enegry.ty = ty;
     }
-    public void AddEnegry(int player, int value)
+    public void AddEnegry(int player, int value = 50)
     {
         if (players[player].hp <= 0) return;
         var enegry = new Enegry(player, value);
@@ -197,6 +192,9 @@ public class Battle : System.IDisposable
             candidate = new NodeCandidate(x, y, 600);
         }
         else return 0;
+        var dot = Vector2.Dot(new Vector2(x - enegry.tx, y - enegry.ty), enegry.velocity / Enegry.SPEED);
+        candidate.width += (int)(dot * 100);
+
         candidate.width += (int)(node.pheromone * 100);
         candidates.Add(candidate);
         return candidate.width;
@@ -207,6 +205,16 @@ public class Battle : System.IDisposable
         if (player >= 0) players[player].territory++;
         if (node.player >= 0) players[node.player].territory--;
         node.player = player;
+    }
+    private bool IsLink(int ax, int ay, int bx, int by)
+    {
+        if (ax < 0 || ay < 0 || ax >= map.width || ay >= map.height) return false;
+        var node = map.nodes[ax, ay];
+        if (node.px == bx && node.py == by) return false;
+        if (bx < 0 || by < 0 || bx >= map.width || by >= map.height) return false;
+        node = map.nodes[bx, by];
+        if (node.px == ax && node.py == ay) return false;
+        return true;
     }
     private void EnegryUpdate()
     {
@@ -220,9 +228,13 @@ public class Battle : System.IDisposable
                 if (node.player != enegry.player)
                 {
                     if (node.state == Map.State.Source)
+                    {
                         HitPlayer(enegry.player, node.player, enegry.value);
+                        map.PathAddPheromone(enegry.sx, enegry.sy, 50);
+                    }
                     else
                     {
+                        map.PathAddPheromone(enegry.sx, enegry.sy, 20);
                         if (node.value < enegry.value)
                         {
                             node.value = enegry.value - node.value;
@@ -275,10 +287,14 @@ public class Battle : System.IDisposable
                     width += AddCandidate(enegry.tx + 0, enegry.ty + 1, enegry);
                     width += AddCandidate(enegry.tx + 0, enegry.ty - 1, enegry);
 
-                    width += AddCandidate(enegry.tx - 1, enegry.ty - 1, enegry);
-                    width += AddCandidate(enegry.tx + 1, enegry.ty - 1, enegry);
-                    width += AddCandidate(enegry.tx - 1, enegry.ty + 1, enegry);
-                    width += AddCandidate(enegry.tx + 1, enegry.ty + 1, enegry);
+                    if (IsLink(enegry.tx - 1, enegry.ty, enegry.tx, enegry.ty - 1))
+                        width += AddCandidate(enegry.tx - 1, enegry.ty - 1, enegry);
+                    if (IsLink(enegry.tx + 1, enegry.ty, enegry.tx, enegry.ty - 1))
+                        width += AddCandidate(enegry.tx + 1, enegry.ty - 1, enegry);
+                    if (IsLink(enegry.tx - 1, enegry.ty, enegry.tx, enegry.ty + 1))
+                        width += AddCandidate(enegry.tx - 1, enegry.ty + 1, enegry);
+                    if (IsLink(enegry.tx + 1, enegry.ty, enegry.tx, enegry.ty + 1))
+                        width += AddCandidate(enegry.tx + 1, enegry.ty + 1, enegry);
                     if (candidates.Count > 0)
                     {
                         enegry.sx = enegry.tx;
@@ -294,12 +310,14 @@ public class Battle : System.IDisposable
                                 break;
                             }
                         }
+                        candidates.Clear();
                     }
                     else
                     {
-                        enegry.Back(this);
+                        (enegry.sx, enegry.tx) = (enegry.tx, enegry.sx);
+                        (enegry.sy, enegry.ty) = (enegry.ty, enegry.sy);
+                        enegry.SetForward(this, false);
                     }
-                    candidates.Clear();
                 }
                 else
                 {

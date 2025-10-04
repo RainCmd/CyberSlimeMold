@@ -11,14 +11,18 @@ public class GameMgr : MonoBehaviour
     private void Start()
     {
         Instance = this;
-        Restart(32);
+        Restart(64);
     }
     private void FixedUpdate()
     {
         battle.Update();
         foreach (var player in battle.players)
             if (player.hp > 0)
-                battle.AddEnegry(player.id, 50);
+            {
+                var count = Mathf.Max(Mathf.Log10(player.hp) + Mathf.Log10(player.territory), 1);
+                if (count-- > 0)
+                    battle.AddEnegry(player.id);
+            }
         paracargoCD -= Time.deltaTime;
         if (paracargoCD < 0)
         {

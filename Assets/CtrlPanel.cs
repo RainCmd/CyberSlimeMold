@@ -21,7 +21,7 @@ public class CtrlPanel : MonoBehaviour
     public void AddSoldier(int count)
     {
         while (count-- > 0)
-            GameMgr.Instance.battle.AddEnegry(selectPlayer.value, 50);
+            GameMgr.Instance.battle.AddEnegry(selectPlayer.value);
     }
     public void AddHP(int hp)
     {
