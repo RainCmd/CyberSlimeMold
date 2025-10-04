@@ -16,31 +16,32 @@ public class GameMgr : MonoBehaviour
     private void FixedUpdate()
     {
         battle.Update();
-        for (int i = 0; i < 4; i++)
-        {
-            if (battle.players[i].hp > 0)
-                battle.AddEnegry(i, 50);
-        }
+        foreach (var player in battle.players)
+            if (player.hp > 0)
+                battle.AddEnegry(player.id, 50);
         paracargoCD -= Time.deltaTime;
         if (paracargoCD < 0)
         {
-            paracargoCD += Random.Range(2, 5);
-            (var x, var y) = GetParacargoPosition();
-            battle.map.nodes[x, y].node.AddEnegry(Random.Range(100, 1000));
+            paracargoCD += Random.Range(.5f, 2);
+            while (true)
+            {
+                var x = Random.Range(0, battle.map.width);
+                var y = Random.Range(0, battle.map.height);
+                var node = battle.map.nodes[x, y];
+                if (node.state != Map.State.Source)
+                {
+                    node.node.AddEnegry(Random.Range(300, 500));
+                    break;
+                }
+            }
         }
-    }
-    private (int, int) GetParacargoPosition()
-    {
-        var wr = battle.map.width / 2;
-        var hr = battle.map.height / 2;
-        return (Random.Range(0, wr) + battle.map.width / 4, Random.Range(0, hr) + battle.map.height / 4);
     }
     public void Restart(int size)
     {
         battle?.Dispose();
         battle = new Battle(size, size, enegryPrefab, nodePrefab);
         Camera.transform.position = new Vector3(battle.map.width - 1, battle.map.height - 1, -20) * .5f;
-        Camera.orthographicSize = battle.map.height / 2;
+        Camera.orthographicSize = battle.map.height * .5f;
     }
     public static GameMgr Instance { get; private set; }
 }

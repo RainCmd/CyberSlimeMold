@@ -4,18 +4,27 @@ using UnityEngine.UI;
 
 public class BarDiagram : MonoBehaviour
 {
-    public Image[] images;
+    public Image prefab;
+    private Image[] images;
     public string field;
     private FieldInfo fieldInfo;
     private RectTransform rt;
-    private readonly int[] values = new int[4];
+    private int[] values;
     private void Start()
     {
         fieldInfo = typeof(Player).GetField(field);
         rt = transform as RectTransform;
         var players = GameMgr.Instance.battle.players;
-        for (int i = 0; i < players.Length; i++)
-            images[i].color = players[i].color;
+        images = new Image[players.Length];
+        values = new int[players.Length];
+        foreach (var player in players)
+        {
+            var image = Instantiate(prefab, transform);
+            image.color = player.color;
+            image.gameObject.SetActive(true);
+            image.transform.SetAsFirstSibling();
+            images[player.id] = image;
+        }
     }
     private void UpdateValues()
     {

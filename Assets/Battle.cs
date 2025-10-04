@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using UnityEngine;
-using static UnityEngine.EventSystems.EventTrigger;
 public class Player
 {
     public int id;
@@ -80,6 +79,10 @@ public class Battle : System.IDisposable
             new(1, "黄", width * 7 / 8, height / 8, width / 16, height / 16, Color.yellow),
             new(2, "蓝", width * 7 / 8, height * 7 / 8, width / 16, height / 16, Color.blue),
             new(3, "绿", width / 8, height * 7 / 8, width / 16, height / 16, Color.green),
+            new(4, "青", width / 8, height / 2, width / 16, height / 16, Color.cyan),
+            new(5, "品红", width * 7 / 8, height / 2, width / 16, height / 16, Color.magenta),
+            new(6, "紫", width / 2, height / 8, width / 16, height / 16, new Color(.5f, 0, 1)),
+            new(7, "橙", width / 2, height * 7 / 8, width / 16, height / 16, new Color(1, .5f, 0)),
         };
         foreach (var player in players)
             for (var x = 0; x < player.width; x++)
@@ -209,7 +212,10 @@ public class Battle : System.IDisposable
                             ChangeNodePlayer(node.x, node.y, enegry.player);
                             node.px = enegry.sx;
                             node.py = enegry.sy;
-                            node.state = node.next = Map.State.Alive;
+                            if (map.nodes[node.px, node.py].state == Map.State.Death)
+                                node.state = node.next = Map.State.Death;
+                            else
+                                node.state = node.next = Map.State.Alive;
                             if (node.value > MAX_NODE_VALUE)
                             {
                                 enegry.value = node.value - MAX_NODE_VALUE;
@@ -243,19 +249,19 @@ public class Battle : System.IDisposable
                     }
                 }
             label_next_node:
-                if (enegry.value <= 0 && !enegry.harvest) goto label_remove_enegry;
+                if (enegry.value <= 0) goto label_remove_enegry;
                 if (enegry.forward)
                 {
                     var width = 0;
                     width += AddCandidate(enegry.tx + 1, enegry.ty + 0, enegry);
-                    //width += AddCandidate(enegry.tx + 0, enegry.ty + 0, enegry);
                     width += AddCandidate(enegry.tx - 1, enegry.ty + 0, enegry);
-                    width += AddCandidate(enegry.tx + 1, enegry.ty + 1, enegry);
                     width += AddCandidate(enegry.tx + 0, enegry.ty + 1, enegry);
-                    width += AddCandidate(enegry.tx - 1, enegry.ty + 1, enegry);
-                    width += AddCandidate(enegry.tx + 1, enegry.ty - 1, enegry);
                     width += AddCandidate(enegry.tx + 0, enegry.ty - 1, enegry);
+
                     width += AddCandidate(enegry.tx - 1, enegry.ty - 1, enegry);
+                    width += AddCandidate(enegry.tx + 1, enegry.ty - 1, enegry);
+                    width += AddCandidate(enegry.tx - 1, enegry.ty + 1, enegry);
+                    width += AddCandidate(enegry.tx + 1, enegry.ty + 1, enegry);
                     if (candidates.Count > 0)
                     {
                         enegry.sx = enegry.tx;
