@@ -51,16 +51,33 @@ public class Battle : System.IDisposable
             forward = true;
         }
 
-        public void Back()
+        public void Back(Battle battle)
         {
             (sx, tx) = (tx, sx);
             (sy, ty) = (ty, sy);
-            forward = !forward;
+            SetForward(battle, !forward);
         }
         public void UpdatePV()
         {
             position = new Vector2(sx, sy);
             velocity = (new Vector2(tx, ty) - position).normalized * 0.15f;
+        }
+        public void SetForward(Battle battle, bool forward)
+        {
+            this.forward = forward;
+            if (forward || harvest)
+            {
+                if (!enegry)
+                {
+                    enegry = battle.GetEnegry();
+                    enegry.transform.position = position;
+                }
+            }
+            else if (enegry)
+            {
+                battle.Recycle(enegry);
+                enegry = null;
+            }
         }
     }
     public const int MAX_NODE_VALUE = 100;
@@ -245,7 +262,7 @@ public class Battle : System.IDisposable
                         enegry.harvest = true;
                         node.enegry--;
                         node.node.UpdateNode(node);
-                        enegry.forward = false;
+                        enegry.SetForward(this, false);
                     }
                 }
             label_next_node:
@@ -280,7 +297,7 @@ public class Battle : System.IDisposable
                     }
                     else
                     {
-                        enegry.Back();
+                        enegry.Back(this);
                     }
                     candidates.Clear();
                 }
@@ -289,7 +306,7 @@ public class Battle : System.IDisposable
                     if (node.state == Map.State.Source)
                     {
                         GetStartPosition(ref enegry, enegry.player);
-                        enegry.forward = true;
+                        enegry.SetForward(this, true);
                         if (enegry.harvest)
                         {
                             enegry.harvest = false;
@@ -299,7 +316,7 @@ public class Battle : System.IDisposable
                     }
                     else if (node.px < 0 || node.py < 0)
                     {
-                        enegry.forward = true;
+                        enegry.SetForward(this, true);
                         goto label_next_node;
                     }
                     else
@@ -309,17 +326,20 @@ public class Battle : System.IDisposable
                     }
                 }
                 enegry.UpdatePV();
-                enegry.enegry.UpdateColor(enegry);
+                if (enegry.enegry)
+                    enegry.enegry.UpdateColor(enegry);
                 if (enegry.forward) node.pheromone++;
                 else if (enegry.harvest) node.pheromone += 100;
                 else node.pheromone = Mathf.Max(0, node.pheromone - 1);
             }
             else enegry.position += enegry.velocity;
-            enegry.enegry.transform.position = enegry.position;
+            if (enegry.enegry)
+                enegry.enegry.transform.position = enegry.position;
             enegries[i] = enegry;
             continue;
         label_remove_enegry:
-            Recycle(enegry.enegry);
+            if (enegry.enegry)
+                Recycle(enegry.enegry);
             players[enegry.player].soldier--;
             enegries[i--] = enegries[^1];
             enegries.RemoveAt(enegries.Count - 1);
@@ -348,7 +368,8 @@ public class Battle : System.IDisposable
         while (pool.Count > 0)
             Object.Destroy(pool.Pop().gameObject);
         foreach (var enegry in enegries)
-            Object.Destroy(enegry.enegry.gameObject);
+            if (enegry.enegry)
+                Object.Destroy(enegry.enegry.gameObject);
         map.Dispose();
     }
 }
