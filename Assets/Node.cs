@@ -18,8 +18,7 @@ public class Node : MonoBehaviour
     {
         if (node.player != this.node.player || node.state != this.node.state || (node.enegry == 0 && this.node.enegry > 0))
         {
-            if (node.state == Map.State.Obstacle)
-                spriteRenderer.color = Color.clear;
+            if (node.state == Map.State.Obstacle) spriteRenderer.color = Color.clear;
             else if (node.player < 0) spriteRenderer.color = Color.black;
             else
             {
@@ -33,6 +32,7 @@ public class Node : MonoBehaviour
                         spriteRenderer.color = player.territoryColor * .5f;
                         break;
                     case Map.State.Source:
+                        spriteRenderer.sortingOrder = 1;
                         spriteRenderer.color = player.color;
                         break;
                     default:

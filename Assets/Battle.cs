@@ -423,8 +423,9 @@ public class Battle : System.IDisposable
                     }
                     else if (node.px < 0 || node.py < 0)
                     {
+                        (enegry.sx, enegry.tx) = (enegry.tx, enegry.sx);
+                        (enegry.sy, enegry.ty) = (enegry.ty, enegry.sy);
                         enegry.SetForward(this, true);
-                        goto label_next_node;
                     }
                     else
                     {

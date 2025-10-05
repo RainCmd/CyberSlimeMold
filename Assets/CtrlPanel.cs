@@ -38,4 +38,11 @@ public class CtrlPanel : MonoBehaviour
     {
         GameMgr.Instance.Restart((int)mapSizeSlider.value);
     }
+    public void OnQuitClick()
+    {
+        Application.Quit();
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#endif
+    }
 }

@@ -20,17 +20,22 @@ public class GameMgr : MonoBehaviour
     {
         battle.Update();
         foreach (var player in battle.players)
+        {
             foreach (var core in player.cores)
                 if (core.hp > 0)
                 {
-                    player.spawn += Mathf.Max(Mathf.Log10(core.hp + 10) + Mathf.Log10(player.territory + 10), 1);
-                    if (player.spawn-- > 0)
-                        battle.AddEnegry(player.id);
                     if (core.stringentState)
                         for (var i = 0; i < 100 && core.stringentState; i++)
                             if (core.hp-- > 100) battle.AddEnegry(player.id);
                             else core.stringentState = false;
                 }
+            if (player.cores.Count > 0)
+            {
+                player.spawn += Mathf.Sqrt(Mathf.Max(Mathf.Log10(player.HP + 10) + Mathf.Log10(player.territory + 10) - Mathf.Log10(player.Soldier + 10), 1));
+                while (player.spawn-- > 0)
+                    battle.AddEnegry(player.id);
+            }
+        }
 
         paracargoCD -= Time.deltaTime;
         if (paracargoCD < 0)

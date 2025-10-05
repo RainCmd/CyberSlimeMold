@@ -114,7 +114,6 @@ MonoBehaviour:
     next: 0
     enegry: 0
     pheromone: 0
-    dirty: 0
 --- !u!61 &8502417010586511675
 BoxCollider2D:
   m_ObjectHideFlags: 0
