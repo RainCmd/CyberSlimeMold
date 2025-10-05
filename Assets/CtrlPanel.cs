@@ -26,7 +26,8 @@ public class CtrlPanel : MonoBehaviour
     public void AddHP(int hp)
     {
         var player = GameMgr.Instance.battle.players[selectPlayer.value];
-        player.hp += hp;
+        foreach (var core in player.cores)
+            core.hp += hp;
     }
     public void OnMapSizeChanged(float value)
     {

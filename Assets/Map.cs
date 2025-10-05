@@ -20,7 +20,6 @@ public class Map : System.IDisposable
         public State state, next;
         public int enegry;
         public float pheromone;
-        public bool dirty;
         public Node(int x, int y, global::Node prefab)
         {
             node = Object.Instantiate(prefab);
@@ -34,7 +33,6 @@ public class Map : System.IDisposable
             state = next = State.Death;
             enegry = 0;
             pheromone = 0;
-            dirty = false;
         }
     }
     public readonly int width, height;
@@ -78,21 +76,20 @@ public class Map : System.IDisposable
                 node.pheromone *= .975f;
                 node.state = node.next;
                 node.node.UpdateNode(node);
-                node.dirty = false;
             }
     }
-    public void PathAddPheromone(int x, int y, float pheromone)
+    public void PathAddPheromone(int x, int y)
     {
-        while (true)
+        var pheromone = 100;
+        while (pheromone > 0)
         {
             ref var node = ref nodes[x, y];
             if (node.player < 0 || node.state != State.Alive) return;
             if (node.px < 0 || node.py < 0) return;
-            if (node.dirty) return;
-            node.pheromone += pheromone;
-            node.dirty = true;
+            node.pheromone++;
             x = node.px;
             y = node.py;
+            pheromone--;
         }
     }
     public void Dispose()

@@ -16,11 +16,16 @@ public class Player
             this.ty = ty;
         }
     }
+    public class Core
+    {
+        public bool stringentState = false;
+        public int hp = 100;
+        public readonly HashSet<Vector2Int> candidates = new();
+    }
     public int id;
     public string name;
     public int x, y;
     public int width, height;
-    public int hp;
     public int territory;
     public int soldier;
     public float spawn;
@@ -28,6 +33,19 @@ public class Player
     public Color territoryColor;
     public Color energyColor;
     public readonly List<Candidate> candidates = new();
+    public readonly List<Core> cores = new();
+    public int HP
+    {
+        get
+        {
+            var hp = 0;
+            foreach (var core in cores)
+                hp += core.hp;
+            return hp;
+        }
+    }
+    public int Territory => territory;
+    public int Soldier => soldier;
     public Player(int id, string name, int x, int y, int width, int height, Color color)
     {
         this.id = id;
@@ -36,7 +54,6 @@ public class Player
         this.y = y - height / 2;
         this.width = width;
         this.height = height;
-        hp = 100;
         territory = width * height;
         soldier = 0;
         this.color = color;
@@ -91,7 +108,7 @@ public class Battle : System.IDisposable
             }
         }
     }
-    public const int MAX_NODE_VALUE = 100;
+    public const int MAX_NODE_VALUE = 10;
     public readonly Map map;
     public readonly Player[] players;
     public readonly List<Enegry> enegries = new();
@@ -115,23 +132,18 @@ public class Battle : System.IDisposable
         };
         foreach (var player in players)
         {
+            var core = new Player.Core();
             for (var x = 0; x < player.width; x++)
                 for (var y = 0; y < player.height; y++)
                 {
                     ref var node = ref map.nodes[player.x + x, player.y + y];
                     node.player = player.id;
                     node.state = node.next = Map.State.Source;
+                    core.candidates.Add(new Vector2Int(node.x, node.y));
                 }
-            for (var x = 0; x < player.width; x++)
-            {
-                player.candidates.Add(new(player.x + x, player.y, player.x + x, player.y - 1));
-                player.candidates.Add(new(player.x + x, player.y + player.height - 1, player.x + x, player.y + player.height));
-            }
-            for (var y = 0; y < player.height; y++)
-            {
-                player.candidates.Add(new(player.x, player.y + y, player.x - 1, player.y + y));
-                player.candidates.Add(new(player.x + player.width - 1, player.y + y, player.x + player.width, player.y + y));
-            }
+            player.cores.Add(core);
+
+            UpdatePlayerCandidates(player);
         }
         SetObstacleArea(Map.State.Obstacle);
     }
@@ -146,6 +158,24 @@ public class Battle : System.IDisposable
             {
                 ref var node = ref map.nodes[x + offsetX, y + offsetY];
                 node.state = node.next = state;
+            }
+    }
+    private void AddCandidates(List<Player.Candidate> candidates, Vector2Int pos, int tx, int ty)
+    {
+        var state = map.nodes[tx, ty].state;
+        if (state != Map.State.Source && state != Map.State.Obstacle)
+            candidates.Add(new Player.Candidate(pos.x, pos.y, tx, ty));
+    }
+    private void UpdatePlayerCandidates(Player player)
+    {
+        player.candidates.Clear();
+        foreach (var core in player.cores)
+            foreach (var pos in core.candidates)
+            {
+                AddCandidates(player.candidates, pos, pos.x + 1, pos.y);
+                AddCandidates(player.candidates, pos, pos.x - 1, pos.y);
+                AddCandidates(player.candidates, pos, pos.x, pos.y + 1);
+                AddCandidates(player.candidates, pos, pos.x, pos.y - 1);
             }
     }
     private void GetStartPosition(ref Enegry enegry, int playerId)
@@ -170,9 +200,10 @@ public class Battle : System.IDisposable
         enegry.tx = result.tx;
         enegry.ty = result.ty;
     }
-    public void AddEnegry(int player, int value = 50)
+    public void AddEnegry(int player, int value = MAX_NODE_VALUE / 2)
     {
-        if (players[player].hp <= 0) return;
+        if (value <= 0) return;
+        if (players[player].candidates.Count == 0) return;
         var enegry = new Enegry(player, value);
         GetStartPosition(ref enegry, player);
         enegry.UpdatePV();
@@ -181,29 +212,31 @@ public class Battle : System.IDisposable
         players[player].soldier++;
         enegries.Add(enegry);
     }
-    private void HitPlayer(int source, int target, int damage)
+    private void HitPlayer(int source, int target, int damage, Vector2Int pos)
     {
         var targetPlayer = players[target];
-        if (targetPlayer.hp > damage) targetPlayer.hp -= damage;
-        else
+        var idx = targetPlayer.cores.FindIndex(core => core.candidates.Contains(pos));
+        if (idx >= 0)
         {
-            targetPlayer.hp = 0;
-            damage -= targetPlayer.hp;
-            var count = targetPlayer.width * targetPlayer.height;
-            var value = damage / count;
-            count = damage % count;
-            for (var x = 0; x < targetPlayer.width; x++)
-                for (var y = 0; y < targetPlayer.height; y++)
-                {
-                    ref var node = ref map.nodes[targetPlayer.x + x, targetPlayer.y + y];
-                    node.px = node.py = -1;
-                    ChangeNodePlayer(node.x, node.y, source);
-                    node.state = node.next = Map.State.Death;
-                    node.value = value;
-                    if (count-- > 0) node.value++;
-                }
-            if (--obstacle == 0)
-                SetObstacleArea(Map.State.Death);
+            var core = targetPlayer.cores[idx];
+            if (core.hp > damage)
+            {
+                core.hp -= damage;
+                core.stringentState = true;
+            }
+            else
+            {
+                core.stringentState = false;
+                core.hp = 100;
+                foreach (var p in core.candidates)
+                    ChangeNodePlayer(p.x, p.y, source);
+                var sourcePlayer = players[source];
+                sourcePlayer.cores.Add(core);
+                targetPlayer.cores.RemoveAt(idx);
+                UpdatePlayerCandidates(sourcePlayer);
+                UpdatePlayerCandidates(targetPlayer);
+                if (--obstacle == 0) SetObstacleArea(Map.State.Death);
+            }
         }
     }
     private struct NodeCandidate
@@ -250,6 +283,12 @@ public class Battle : System.IDisposable
         if (node.player >= 0) players[node.player].territory--;
         node.player = player;
     }
+    private bool IsParent(int x, int y, int px, int py)
+    {
+        if (x < 0 || y < 0 || x >= map.width || y >= map.height) return false;
+        var node = map.nodes[x, y];
+        return node.px == px && node.py == py;
+    }
     private bool IsLink(int ax, int ay, int bx, int by)
     {
         if (ax < 0 || ay < 0 || ax >= map.width || ay >= map.height) return false;
@@ -273,12 +312,12 @@ public class Battle : System.IDisposable
                 {
                     if (node.state == Map.State.Source)
                     {
-                        HitPlayer(enegry.player, node.player, enegry.value);
-                        map.PathAddPheromone(enegry.sx, enegry.sy, 50);
+                        HitPlayer(enegry.player, node.player, enegry.value, new Vector2Int(node.x, node.y));
+                        map.PathAddPheromone(enegry.sx, enegry.sy);
                     }
                     else
                     {
-                        map.PathAddPheromone(enegry.sx, enegry.sy, node.enegry + 20);
+                        map.PathAddPheromone(enegry.sx, enegry.sy);
                         if (node.value < enegry.value)
                         {
                             node.value = enegry.value - node.value;
@@ -302,7 +341,7 @@ public class Battle : System.IDisposable
                 }
                 else if (node.state != Map.State.Source)
                 {
-                    if (node.enegry > 0) map.PathAddPheromone(node.x, node.y, node.enegry);
+                    if (node.enegry > 0) map.PathAddPheromone(node.x, node.y);
                     if (node.value < MAX_NODE_VALUE)
                     {
                         node.value += enegry.value;
@@ -332,13 +371,13 @@ public class Battle : System.IDisposable
                     width += AddCandidate(enegry.tx + 0, enegry.ty + 1, enegry);
                     width += AddCandidate(enegry.tx + 0, enegry.ty - 1, enegry);
 
-                    if (IsLink(enegry.tx - 1, enegry.ty, enegry.tx, enegry.ty - 1))
+                    if (IsLink(enegry.tx - 1, enegry.ty, enegry.tx, enegry.ty - 1) || IsParent(enegry.tx - 1, enegry.ty - 1, enegry.tx, enegry.ty))
                         width += AddCandidate(enegry.tx - 1, enegry.ty - 1, enegry);
-                    if (IsLink(enegry.tx + 1, enegry.ty, enegry.tx, enegry.ty - 1))
+                    if (IsLink(enegry.tx + 1, enegry.ty, enegry.tx, enegry.ty - 1) || IsParent(enegry.tx + 1, enegry.ty - 1, enegry.tx, enegry.ty))
                         width += AddCandidate(enegry.tx + 1, enegry.ty - 1, enegry);
-                    if (IsLink(enegry.tx - 1, enegry.ty, enegry.tx, enegry.ty + 1))
+                    if (IsLink(enegry.tx - 1, enegry.ty, enegry.tx, enegry.ty + 1) || IsParent(enegry.tx - 1, enegry.ty + 1, enegry.tx, enegry.ty))
                         width += AddCandidate(enegry.tx - 1, enegry.ty + 1, enegry);
-                    if (IsLink(enegry.tx + 1, enegry.ty, enegry.tx, enegry.ty + 1))
+                    if (IsLink(enegry.tx + 1, enegry.ty, enegry.tx, enegry.ty + 1) || IsParent(enegry.tx + 1, enegry.ty + 1, enegry.tx, enegry.ty))
                         width += AddCandidate(enegry.tx + 1, enegry.ty + 1, enegry);
                     if (candidates.Count > 0)
                     {
@@ -373,7 +412,12 @@ public class Battle : System.IDisposable
                         if (enegry.harvest)
                         {
                             enegry.harvest = false;
-                            players[enegry.player].hp++;
+                            foreach (var core in players[enegry.player].cores)
+                                if (core.candidates.Contains(new Vector2Int(node.x, node.y)))
+                                {
+                                    core.hp++;
+                                    break;
+                                }
                             AddEnegry(enegry.player, enegry.value);
                         }
                     }

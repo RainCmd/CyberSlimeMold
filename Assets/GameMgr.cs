@@ -1,4 +1,6 @@
+using System;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 public class GameMgr : MonoBehaviour
 {
@@ -8,6 +10,7 @@ public class GameMgr : MonoBehaviour
     public Transform mapRoot, enegryRoot;
     public float paracargoCD;
     public Camera Camera;
+    public event Action OnRestart;
     private void Start()
     {
         Instance = this;
@@ -17,12 +20,18 @@ public class GameMgr : MonoBehaviour
     {
         battle.Update();
         foreach (var player in battle.players)
-            if (player.hp > 0)
-            {
-                player.spawn += Mathf.Max(Mathf.Log10(player.hp) + Mathf.Log10(player.territory), 1);
-                if (player.spawn-- > 0)
-                    battle.AddEnegry(player.id);
-            }
+            foreach (var core in player.cores)
+                if (core.hp > 0)
+                {
+                    player.spawn += Mathf.Max(Mathf.Log10(core.hp + 10) + Mathf.Log10(player.territory + 10), 1);
+                    if (player.spawn-- > 0)
+                        battle.AddEnegry(player.id);
+                    if (core.stringentState)
+                        for (var i = 0; i < 100 && core.stringentState; i++)
+                            if (core.hp-- > 100) battle.AddEnegry(player.id);
+                            else core.stringentState = false;
+                }
+
         paracargoCD -= Time.deltaTime;
         if (paracargoCD < 0)
         {
@@ -34,7 +43,7 @@ public class GameMgr : MonoBehaviour
                 var node = battle.map.nodes[x, y];
                 if (node.state != Map.State.Source && node.state != Map.State.Obstacle)
                 {
-                    node.node.AddEnegry(Random.Range(300, 500));
+                    node.node.AddEnegry(Random.Range(400, 600));
                     break;
                 }
             }
@@ -46,6 +55,7 @@ public class GameMgr : MonoBehaviour
         battle = new Battle(size, size, enegryPrefab, nodePrefab);
         Camera.transform.position = new Vector3(battle.map.width - 1, battle.map.height - 1, -20) * .5f;
         Camera.orthographicSize = battle.map.height * .5f;
+        OnRestart?.Invoke();
     }
     public static GameMgr Instance { get; private set; }
 }

@@ -248,7 +248,7 @@ GameObject:
   - component: {fileID: 387126251}
   - component: {fileID: 387126252}
   m_Layer: 5
-  m_Name: "\u6761\u5F62\u56FE"
+  m_Name: "\u997C\u56FE"
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1072,7 +1072,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   prefab: {fileID: 788846767}
-  field: hp
+  property: HP
 --- !u!1 &640316321
 GameObject:
   m_ObjectHideFlags: 0
@@ -4104,7 +4104,7 @@ GameObject:
   - component: {fileID: 1866306773}
   - component: {fileID: 1866306774}
   m_Layer: 5
-  m_Name: "\u7C92\u5B50"
+  m_Name: Soldier
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4144,7 +4144,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   prefab: {fileID: 830658028}
-  field: soldier
+  property: Soldier
 --- !u!1 &1937429896
 GameObject:
   m_ObjectHideFlags: 0
@@ -4688,7 +4688,7 @@ GameObject:
   - component: {fileID: 2118418307}
   - component: {fileID: 2118418308}
   m_Layer: 5
-  m_Name: "\u9886\u5730"
+  m_Name: Territory
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4728,7 +4728,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   prefab: {fileID: 1686412261}
-  field: territory
+  property: Territory
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

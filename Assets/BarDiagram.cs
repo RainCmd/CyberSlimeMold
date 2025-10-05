@@ -1,4 +1,4 @@
-using System.Reflection;
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -6,16 +6,16 @@ public class BarDiagram : MonoBehaviour
 {
     public Image prefab;
     private Image[] images;
-    public string field;
-    private FieldInfo fieldInfo;
+    public string property;
+    private Func<int>[] gets;
     private int[] values;
     private void Start()
     {
-        fieldInfo = typeof(Player).GetField(field);
         var players = GameMgr.Instance.battle.players;
         images = new Image[players.Length];
         values = new int[players.Length];
-        foreach (var player in players)
+        gets = new Func<int>[players.Length];
+        foreach (var player in GameMgr.Instance.battle.players)
         {
             var image = Instantiate(prefab, transform);
             image.color = player.color;
@@ -23,16 +23,19 @@ public class BarDiagram : MonoBehaviour
             image.transform.SetAsFirstSibling();
             images[player.id] = image;
         }
+        OnRestart();
+        GameMgr.Instance.OnRestart += OnRestart;
     }
-    private void UpdateValues()
+    public void OnRestart()
     {
-        var players = GameMgr.Instance.battle.players;
-        for (int i = 0; i < players.Length; i++)
-            values[i] = (int)fieldInfo.GetValue(players[i]);
+        var method = typeof(Player).GetMethod("get_" + property);
+        foreach (var player in GameMgr.Instance.battle.players)
+            gets[player.id] = (Func<int>)Delegate.CreateDelegate(typeof(Func<int>), player, method);
     }
     public void Update()
     {
-        UpdateValues();
+        for (int i = 0; i < values.Length; i++)
+            values[i] = gets[i].Invoke();
         var total = 0;
         foreach (var v in values)
             total += v;
