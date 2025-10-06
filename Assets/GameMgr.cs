@@ -25,13 +25,13 @@ public class GameMgr : MonoBehaviour
                 if (core.hp > 0)
                 {
                     if (core.stringentState)
-                        for (var i = 0; i < 100 && core.stringentState; i++)
+                        for (var i = 0; i < 50 && core.stringentState; i++)
                             if (core.hp-- > 100) battle.AddEnegry(player.id);
                             else core.stringentState = false;
                 }
             if (player.cores.Count > 0)
             {
-                player.spawn += Mathf.Sqrt(Mathf.Max(Mathf.Log10(player.HP + 10) + Mathf.Log10(player.territory + 10) - Mathf.Log10(player.Soldier + 10), 1));
+                player.spawn += Mathf.Sqrt(Mathf.Max(Mathf.Log10(player.HP + 10) + Mathf.Log10(player.territory + 10), 1));
                 while (player.spawn-- > 0)
                     battle.AddEnegry(player.id);
             }

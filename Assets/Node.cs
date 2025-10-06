@@ -32,7 +32,6 @@ public class Node : MonoBehaviour
                         spriteRenderer.color = player.territoryColor * .5f;
                         break;
                     case Map.State.Source:
-                        spriteRenderer.sortingOrder = 1;
                         spriteRenderer.color = player.color;
                         break;
                     default:

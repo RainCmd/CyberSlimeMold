@@ -29,7 +29,7 @@ public class Map : System.IDisposable
             this.x = x; this.y = y;
             px = py = -1;
             player = -1;
-            value = Battle.MAX_NODE_VALUE;
+            value = Battle.MAX_NODE_VALUE / 2;
             state = next = State.Death;
             enegry = 0;
             pheromone = 0;

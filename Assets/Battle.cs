@@ -19,7 +19,7 @@ public class Player
     public class Core
     {
         public bool stringentState = false;
-        public int hp = 100;
+        public int hp = 1000;
         public readonly HashSet<Vector2Int> candidates = new();
     }
     public int id;
@@ -108,7 +108,7 @@ public class Battle : System.IDisposable
             }
         }
     }
-    public const int MAX_NODE_VALUE = 10;
+    public const int MAX_NODE_VALUE = 2;
     public readonly Map map;
     public readonly Player[] players;
     public readonly List<Enegry> enegries = new();
