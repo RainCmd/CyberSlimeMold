@@ -12,6 +12,7 @@ public class RotatingDisc : MonoBehaviour
         Shoot,
         Wait,
     }
+    private Transform content;
     public Transform rotor;
     public Image[] images;
     public Image pointer;
@@ -27,8 +28,11 @@ public class RotatingDisc : MonoBehaviour
     private float duration;
     private void Start()
     {
-        pointer.color = GameMgr.Instance.battle.players[playerId].color;
+        var player = GameMgr.Instance.battle.players[playerId];
+        pointer.color = player.color;
         GameMgr.Instance.OnRestart += Instance_OnRestart;
+        content = new GameObject(player.name, new System.Type[] { typeof(RectTransform) }).transform;
+        content.transform.SetParent(transform.parent);
         Instance_OnRestart();
     }
 
@@ -41,6 +45,7 @@ public class RotatingDisc : MonoBehaviour
         rotor.rotation = Quaternion.Euler(0, 0, Random.Range(0, 360));
         UpdateValue();
         gameObject.SetActive(true);
+        content.gameObject.SetActive(true);
     }
     private void OnDestroy()
     {
@@ -77,6 +82,7 @@ public class RotatingDisc : MonoBehaviour
 
     private void Update()
     {
+        transform.position = Vector3.Lerp(content.position, transform.position, .9f);
         var player = GameMgr.Instance.battle.players[playerId];
         switch (state)
         {
@@ -166,7 +172,10 @@ public class RotatingDisc : MonoBehaviour
         if (value != displayValue) UpdateValue();
 
         if (player.soldier == 0 && player.cores.Count == 0)
+        {
             gameObject.SetActive(false);
+            content.gameObject.SetActive(false);
+        }
     }
     private void UpdateValue()
     {
