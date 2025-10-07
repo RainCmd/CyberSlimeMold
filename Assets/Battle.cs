@@ -20,6 +20,7 @@ public class Player
     {
         public bool stringentState = false;
         public int hp = 1000;
+        public Vector2 center;
         public readonly HashSet<Vector2Int> candidates = new();
     }
     public int id;
@@ -140,7 +141,9 @@ public class Battle : System.IDisposable
                     node.player = player.id;
                     node.state = node.next = Map.State.Source;
                     core.candidates.Add(new Vector2Int(node.x, node.y));
+                    core.center += new Vector2(node.x, node.y);
                 }
+            core.center /= core.candidates.Count;
             player.cores.Add(core);
 
             UpdatePlayerCandidates(player);
