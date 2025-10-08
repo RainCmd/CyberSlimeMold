@@ -13,7 +13,9 @@ public class Feed : MonoBehaviour, IPointerClickHandler
             if (!hit.collider) return;
             var node = hit.collider.GetComponent<Node>();
             if (!node || node.node.state == Map.State.Source || node.node.state == Map.State.Obstacle) return;
-            node.AddEnegry(100);
+            //node.AddEnegry(100);
+            ref var n = ref GameMgr.Instance.battle.map.nodes[node.node.x, node.node.y];
+            n.px = n.py = -1;
         }
     }
 }

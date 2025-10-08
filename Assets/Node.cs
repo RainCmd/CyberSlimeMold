@@ -19,7 +19,7 @@ public class Node : MonoBehaviour
         if (node.player != this.node.player || node.state != this.node.state || (node.enegry == 0 && this.node.enegry > 0))
         {
             if (node.state == Map.State.Obstacle) spriteRenderer.color = Color.clear;
-            else if (node.player < 0) spriteRenderer.color = Color.black;
+            else if (node.player < 0) spriteRenderer.color = node.state == Map.State.Source ? Color.grey : Color.black;
             else
             {
                 var player = GameMgr.Instance.battle.players[node.player];

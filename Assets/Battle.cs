@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using static Unity.VisualScripting.Member;
 
 public class Player
 {
@@ -115,6 +116,7 @@ public class Battle : System.IDisposable
     public readonly List<Enegry> enegries = new();
     private readonly global::Enegry prefab;
     private readonly Stack<global::Enegry> pool = new();
+    private readonly Dictionary<Vector2Int, Player.Core> cores = new();
     private int obstacle = 4;//当死了多少个玩家后消除中心障碍物
     public Battle(int width, int height, global::Enegry enegryPrefab, Node nodePrefab)
     {
@@ -162,6 +164,33 @@ public class Battle : System.IDisposable
                 ref var node = ref map.nodes[x + offsetX, y + offsetY];
                 node.state = node.next = state;
             }
+    }
+    private void CreateCore(int x, int y, int width, int height)
+    {
+        x -= width / 2;
+        y -= height / 2;
+        var core = new Player.Core();
+        for (var ix = 0; ix < width; ix++)
+            for (var iy = 0; iy < height; iy++)
+            {
+                var pos = new Vector2Int(ix + x, iy + y);
+                ref var node = ref map.nodes[pos.x, pos.y];
+                node.state = node.next = Map.State.Source;
+                core.candidates.Add(pos);
+                core.center += new Vector2(pos.x, pos.y);
+                cores[pos] = core;
+            }
+        core.center /= core.candidates.Count;
+    }
+    private void CreateNeutralityCore()
+    {
+        var width = map.width / 16;
+        var height = map.height / 16;
+        //CreateCore(map.width / 3, map.height / 3, width, height);
+        //CreateCore(map.width / 3 * 2, map.height / 3 * 2, width, height);
+        //CreateCore(map.width / 3 * 2, map.height / 3, width, height);
+        //CreateCore(map.width / 3, map.height / 3 * 2, width, height);
+        CreateCore(map.width / 2, map.height / 2, width, height);
     }
     private void AddCandidates(List<Player.Candidate> candidates, Vector2Int pos, int tx, int ty)
     {
@@ -215,30 +244,45 @@ public class Battle : System.IDisposable
         players[player].soldier++;
         enegries.Add(enegry);
     }
+    private void SetCorePlayer(Player.Core core, int player)
+    {
+        core.stringentState = false;
+        core.hp = 100;
+        foreach (var p in core.candidates)
+            ChangeNodePlayer(p.x, p.y, player);
+        players[player].cores.Add(core);
+        UpdatePlayerCandidates(players[player]);
+    }
     private void HitPlayer(int source, int target, int damage, Vector2Int pos)
     {
-        var targetPlayer = players[target];
-        var idx = targetPlayer.cores.FindIndex(core => core.candidates.Contains(pos));
-        if (idx >= 0)
+        if (target < 0)
         {
-            var core = targetPlayer.cores[idx];
-            if (core.hp > damage)
+            if (cores.TryGetValue(pos, out var core))
+                SetCorePlayer(core, source);
+        }
+        else
+        {
+            var targetPlayer = players[target];
+            var idx = targetPlayer.cores.FindIndex(core => core.candidates.Contains(pos));
+            if (idx >= 0)
             {
-                core.hp -= damage;
-                core.stringentState = true;
-            }
-            else
-            {
-                core.stringentState = false;
-                core.hp = 100;
-                foreach (var p in core.candidates)
-                    ChangeNodePlayer(p.x, p.y, source);
-                var sourcePlayer = players[source];
-                sourcePlayer.cores.Add(core);
-                targetPlayer.cores.RemoveAt(idx);
-                UpdatePlayerCandidates(sourcePlayer);
-                UpdatePlayerCandidates(targetPlayer);
-                if (--obstacle == 0) SetObstacleArea(Map.State.Death);
+                var core = targetPlayer.cores[idx];
+                if (core.hp > damage)
+                {
+                    core.hp -= damage;
+                    core.stringentState = true;
+                }
+                else
+                {
+                    SetCorePlayer(core, source);
+                    targetPlayer.cores.RemoveAt(idx);
+                    UpdatePlayerCandidates(targetPlayer);
+                    if (--obstacle == 0)
+                    {
+                        SetObstacleArea(Map.State.Death);
+                        CreateNeutralityCore();
+                    }
+                }
             }
         }
     }

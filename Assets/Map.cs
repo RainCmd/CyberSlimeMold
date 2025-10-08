@@ -55,18 +55,22 @@ public class Map : System.IDisposable
             for (var y = 0; y < height; y++)
             {
                 ref var node = ref nodes[x, y];
-                if (node.state != State.Source && node.px >= 0 && node.py >= 0)
+                if (node.state != State.Source && node.state != State.Obstacle)
                 {
-                    var parent = nodes[node.px, node.py];
-                    if (parent.player != node.player)
-                    {
-                        node.px = node.py = -1;
-                        node.next = State.Death;
-                    }
-                    else if (parent.state == State.Death)
-                        node.next = State.Death;
+                    if (node.px < 0 && node.py < 0) node.next = State.Death;
                     else
-                        node.next = State.Alive;
+                    {
+                        var parent = nodes[node.px, node.py];
+                        if (parent.player != node.player)
+                        {
+                            node.px = node.py = -1;
+                            node.next = State.Death;
+                        }
+                        else if (parent.state == State.Death)
+                            node.next = State.Death;
+                        else
+                            node.next = State.Alive;
+                    }
                 }
             }
         for (var x = 0; x < width; x++)

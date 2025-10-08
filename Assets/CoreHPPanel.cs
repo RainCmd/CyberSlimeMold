@@ -10,28 +10,34 @@ public class CoreHPPanel : MonoBehaviour
     private void Start()
     {
         cam = FindAnyObjectByType<Camera>();
-        if (!cam)
-        {
-            gameObject.SetActive(false);
-            return;
-        }
+        gameObject.SetActive(cam);
+    }
+    private void Update()
+    {
+        var count = 0;
         foreach (var player in GameMgr.Instance.battle.players)
             foreach (var core in player.cores)
+                count++;
+        if (count < infos.Count)
+        {
+            for (var i = count; i < infos.Count; i++)
+                Destroy(infos[i].gameObject);
+            infos.RemoveRange(count, infos.Count - count);
+        }
+        else if (count > infos.Count)
+        {
+            for (var i = infos.Count; i < count; i++)
             {
                 var info = Instantiate(prefab, transform);
                 info.gameObject.SetActive(true);
                 infos.Add(info);
-                SetInfo(core, info);
             }
-    }
-    private void Update()
-    {
+        }
+
         var index = 0;
         foreach (var player in GameMgr.Instance.battle.players)
             foreach (var core in player.cores)
-            {
                 SetInfo(core, infos[index++]);
-            }
     }
     private void SetInfo(Player.Core core, Text info)
     {
