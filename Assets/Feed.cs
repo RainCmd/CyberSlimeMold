@@ -5,17 +5,11 @@ public class Feed : MonoBehaviour, IPointerClickHandler
 {
     public void OnPointerClick(PointerEventData eventData)
     {
-        var camera = FindObjectOfType<Camera>();
-        if (camera)
-        {
-            var ray = camera.ScreenPointToRay(eventData.position);
-            var hit = Physics2D.Raycast(ray.origin, ray.direction);
-            if (!hit.collider) return;
-            var node = hit.collider.GetComponent<Node>();
-            if (!node || node.node.state == Map.State.Source || node.node.state == Map.State.Obstacle) return;
-            //node.AddEnegry(100);
-            ref var n = ref GameMgr.Instance.battle.map.nodes[node.node.x, node.node.y];
-            n.px = n.py = -1;
-        }
+        var ray = GameMgr.Instance.Camera.ScreenPointToRay(eventData.position);
+        var hit = Physics2D.Raycast(ray.origin, ray.direction);
+        if (!hit.collider) return;
+        var node = hit.collider.GetComponent<Node>();
+        if (!node || node.node.state == Map.State.Source || node.node.state == Map.State.Obstacle) return;
+        node.AddEnegry(100);
     }
 }

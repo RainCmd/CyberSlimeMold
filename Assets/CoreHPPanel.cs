@@ -6,12 +6,6 @@ public class CoreHPPanel : MonoBehaviour
 {
     public Text prefab;
     private readonly List<Text> infos = new();
-    private Camera cam;
-    private void Start()
-    {
-        cam = FindAnyObjectByType<Camera>();
-        gameObject.SetActive(cam);
-    }
     private void Update()
     {
         var count = 0;
@@ -41,7 +35,7 @@ public class CoreHPPanel : MonoBehaviour
     }
     private void SetInfo(Player.Core core, Text info)
     {
-        info.transform.position = cam.WorldToScreenPoint(core.center);
+        info.transform.position = GameMgr.Instance.Camera.WorldToScreenPoint(core.center);
         info.text = RotatingDisc.FormatNumber(core.hp);
     }
 }

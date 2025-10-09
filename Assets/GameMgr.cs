@@ -10,6 +10,7 @@ public class GameMgr : MonoBehaviour
     public Transform mapRoot, enegryRoot;
     public float paracargoCD;
     public Camera Camera;
+    public Camera EnegryCamera;
     public event Action OnRestart;
     private void Start()
     {
@@ -59,7 +60,7 @@ public class GameMgr : MonoBehaviour
         battle?.Dispose();
         battle = new Battle(size, size, enegryPrefab, nodePrefab);
         Camera.transform.position = new Vector3(battle.map.width - 1, battle.map.height - 1, -20) * .5f;
-        Camera.orthographicSize = battle.map.height * .5f;
+        EnegryCamera.orthographicSize = Camera.orthographicSize = battle.map.height * .5f;
         OnRestart?.Invoke();
     }
     public static GameMgr Instance { get; private set; }
